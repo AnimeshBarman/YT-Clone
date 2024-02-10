@@ -5,10 +5,12 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken"
 
+
 const options = {
     httpOnly: true,
     secure: true
 }
+
 
 const generateAccessRefreshTokens = async (userId) => {
     try {
@@ -24,7 +26,7 @@ const generateAccessRefreshTokens = async (userId) => {
     } catch (error) {
         throw new apiError(500, 'Problem while generating Access and Refresh Token')
     }
-}// returning accessToken and refreshToken
+} //returning accessToken and refreshToken
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -180,19 +182,19 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
-    
+
         const user = await User.findById(decodedToken?._id)
-    
+
         if (!user) {
             throw new apiError(401, "Invalid refresh Token from refreshAccessToken controller")
         }
-    
+
         if (incomingRefreshToken !== user?.refreshToken) {
             throw new apiError(401, "Refresh token is not same from refreshAccessToken controller")
         }
-    
+
         const { accessToken, newRefreshToken } = await generateAccessRefreshTokens(user._id)
-    
+
         return res.status(200)
             .cookie("accessToken", accessToken, options)
             .cookie("refreshToken", newRefreshToken, options)
