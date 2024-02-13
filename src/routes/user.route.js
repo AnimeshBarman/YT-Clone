@@ -13,7 +13,7 @@ import {
     updateCoverImage
 } from "../controllers/user.controller.js";
 import { upload } from '../middlewares/multer.middleware.js'
-import { verifyJWT } from "../middlewares/findUser.middleware.js";
+import { verifyJWT } from "../middlewares/verifyUser.middleware.js";
 
 
 const router = Router()
