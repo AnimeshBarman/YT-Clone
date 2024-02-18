@@ -32,7 +32,6 @@ const generateAccessRefreshTokens = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, fullname, password } = req.body
-    // console.log('email:', email);
 
     if ([fullname, email, username, password].some((field) => field?.trim() === "")) {
         throw new apiError(400, "All fields are required");
@@ -46,18 +45,11 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new apiError(409, "User with email or username alredy exists")
     }
 
-    // console.log(req.files);
-
-    // const coverImageLocalPath = req.files?.avatar[0]?.path;
-    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
     let coverImageLocalPath
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path;
     }
-
-    // console.log(req.findById.coverImage.path);
-    // console.log(Array.isArray(req.files.coverImage));
 
     let avatarLocalPath;
     if (req.files && Array.isArray(req.files.avatar) && req.files.avatar.length > 0) {
