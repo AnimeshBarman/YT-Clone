@@ -8,6 +8,18 @@ import { apiResponse } from "../utils/apiResponse.js"
 import { v2 as cloudinary } from 'cloudinary';
 
 
+const isOwner = async (req, videoId) => {
+    const video = await Video.findById(videoId).populate("owner")
+    if(!video) {
+        throw new apiError(404, "Video not found")
+    }
+    if (video.owner !== req.user?._id) {
+        return false
+    }
+
+    return true;
+}
+
 
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
@@ -81,7 +93,31 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new apiError(400, "Video is not available")
     }
 
-
+    // const authorized = isOwner(videoId, req.user)
+    // if (!authorized) {
+    //     throw new apiError(400, "U r not owner")
+    // }
+    const video = await Video.findById(videoId)
+    await Video.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(videoId)
+            },
+        },
+        {
+            $lookup: {
+                from: "likes",
+                localField: "likes",
+                foreignField: "video",
+                as: "likes"
+            }
+        },
+        {
+            $lookup: {
+                
+            }
+        }
+    ])
     //TODO: get video details by id
 })
 
@@ -98,9 +134,15 @@ const updateVideo = asyncHandler(async (req, res) => {
         throw new apiError(400, "Thumbnail is missing")
     }
 
-    const video = await Video.findById(videoId).populate('owner')
-    if (video.owner !== req.user._id) {
-        throw new apiError(400, "Can not update, u r not the Owner")
+    // const video = await Video.findById(videoId).populate('owner')
+    // if (video.owner !== req.user._id) {
+    //     throw new apiError(400, "Can not update, u r not the Owner")
+    // }
+
+    const ownerCheck = isOwner(videoId, req.user);
+
+    if (!ownerCheck) {
+        throw new apiError(400, "You are not the Owner cant proceed")
     }
 
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
