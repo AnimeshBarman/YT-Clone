@@ -11,7 +11,7 @@ const isOwner = async (commentId, req) => {
         throw new apiError(404, "comment not available")
     }
 
-    if (comment.owner !== req.user?._id) return false;
+    if (comment.owner._id !== req.user?._id) return false;
 
     return true;
 }
