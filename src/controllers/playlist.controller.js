@@ -157,17 +157,18 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
         throw new apiError(404, "Playlist not found")
     }
 
-    const videoAlreadyExist = await playlist.videos.includes(videoId)
+    const videoIndex = playlist.videos.findIndex((video) => video?._id.toString() === videoId)
 
-    if (videoAlreadyExist) {
-        throw new apiError(400, 'video already exist')
+    if (videoIndex) {
+        throw new apiError(400, "video already exist")
     }
+
 
     const updatedPlaylist = await Playlist.findByIdAndUpdate(
         playlistId,
         {
             $push: {
-                videos: videoId
+                videos: { _id: videoId }
             }
         },
         { new: true }
