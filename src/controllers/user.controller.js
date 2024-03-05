@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { apiError } from '../utils/apiError.js'
 import { User } from '../models/user.model.js'
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
@@ -80,26 +80,30 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const user = await User.create({
         fullname,
-        avatar: avatar.url,
-        // coverImage: coverImage.url,
+        avatar: {
+            url: avatar.url,
+            public_id: avatar.public_id
+        },
+        // coverImage: {
+        // url: coverImage.url,
+        // public_id: coverImage.public_id
+        // },
         email,
         password,
         username
     })
 
-    const cretedUser = await User.findById(user._id).select(
-        "-password -refreshToken"
-    )
+const cretedUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+)
 
-    if (!cretedUser) {
-        throw new apiError(500, "Server error")
-    }
+if (!cretedUser) {
+    throw new apiError(500, "Server error")
+}
 
-    return await res.status(201).json(
-        new apiResponse(200, cretedUser, "User registered successfully")
-    )
-
-
+return await res.status(201).json(
+    new apiResponse(200, cretedUser, "User registered successfully")
+)
 
 })
 
@@ -217,7 +221,8 @@ const changePassword = asyncHandler(async (req, res) => {
         throw new apiError(400, "Invalid old password from changePassword controller")
     }
 
-    user.password = newPassword
+    user.password = newPassword;
+
     await user.save({
         validateBeforeSave: false
     })
@@ -293,6 +298,12 @@ const updateAvatar = asyncHandler(async (req, res) => {
         }
     ).select("-password")
 
+    if (!user) {
+        throw new apiError(500, "Problem while updating avatar file")
+    }
+
+    await deleteFromCloudinary(avatar.public_id, "image")
+
     return res
         .status(200)
         .json(
@@ -324,6 +335,9 @@ const updateCoverImage = asyncHandler(async (req, res) => {
             new: true
         }
     ).select("-password")
+
+    await deleteFromCloudinary(coverImage.public_id, "image")
+
 
     return res
         .status(200)
@@ -406,6 +420,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
 
 const getWatchHistory = asyncHandler(async (req, res) => {
+    
     const user = await User.aggregate([
         {
             $match: {
