@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose, {isValidObjectId} from "mongoose"
 import { Comment } from "../models/comment.model.js"
 import { apiError } from "../utils/apiError.js"
 import { apiResponse } from "../utils/apiResponse.js"
@@ -21,6 +21,55 @@ const getVideoComments = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     const { page = 1, limit = 10 } = req.query
 
+    if (!isValidObjectId(videoId)) {
+        throw new apiError(400, "invalid video id")
+    }
+
+    try {
+        const pageNum = Number(page)
+        if (isNaN(pageNum) || pageNum < 1) {
+            throw new apiError(400, "Invalid page number")
+        }
+
+        const commentlimit = Number(limit)
+        if (isNaN(commentlimit) || commentlimit < 1 || commentlimit > 50) {
+            throw new apiError(400, "Invalid limit, max limit is 50")
+        }
+
+    } catch (error) {
+        console.log("Error while validating comment limit and page number: ", error);
+        throw new apiError(500, "Validation error")
+    }
+
+    const options = {
+        page: pageNum,
+        limit: commentlimit,
+    }
+
+    const aggregate = [
+        {
+            $match: {
+                video: new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $project: {
+                content: 1,
+                owner: 1
+            }
+        }
+    ];
+
+    const comments = await Comment.aggregatePaginate(aggregate, options)
+
+    if (!comments || comments.length === 0) {
+        throw new apiError(404, "Comments not found")
+    }
+
+    return res.status(200).json(
+        new apiResponse(200, comments, "Comments fetched successfully")
+    )
+
 })
 
 const addComment = asyncHandler(async (req, res) => {
@@ -28,7 +77,7 @@ const addComment = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     const { content } = req.body
 
-    if (!videoId) {
+    if (!isValidObjectId(videoId)) {
         throw new apiError(404, "Video not found")
     }
 
@@ -62,7 +111,7 @@ const updateComment = asyncHandler(async (req, res) => {
     if (!updateComment) {
         throw new apiError(400, "update comment field missing")
     }
-    if (!commentId) return
+    if (!isValidObjectId(commentId)) return;
 
     const comment = await Comment.findById(commentId)
     if (!comment) {

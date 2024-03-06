@@ -80,7 +80,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
         const options = {
             page: pageNum,
             limit: videosPerPage,
-            skip: (pageNum - 1) * videosPerPage
         }
 
         const videos = await Video.aggregatePaginate(pipeline, options)
