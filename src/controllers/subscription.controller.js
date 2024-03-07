@@ -1,28 +1,24 @@
-import mongoose, {isValidObjectId} from "mongoose"
-import {User} from "../models/user.model.js"
+import mongoose, { isValidObjectId } from "mongoose"
+import { User } from "../models/user.model.js"
 import { Subscription } from "../models/subscription.model.js"
-import {apiError} from "../utils/apiError.js"
-import {apiResponse} from "../utils/apiResponse.js"
-import {asyncHandler} from "../utils/asyncHandler.js"
+import { apiError } from "../utils/apiError.js"
+import { apiResponse } from "../utils/apiResponse.js"
+import { asyncHandler } from "../utils/asyncHandler.js"
 
 
 const toggleSubscription = asyncHandler(async (req, res) => {
-    const {channelId} = req.params
+    const { channelId } = req.params
     if (!isValidObjectId(channelId)) {
         throw new apiError(404, "Channel not found")
     }
+
 
     const alreadySubscribed = await Subscription.findOne({
         channel: channelId,
         subscriber: req.user._id
     })
 
-    let subscribe
-    if (alreadySubscribed) {
-        subscribe = await Subscription.findByIdAndDelete(alreadySubscribed?._id)
-    }
-
-    subscribe = await Subscription.create({
+    const subscribe = alreadySubscribed ? (await Subscription.findByIdAndDelete(alreadySubscribed?._id)) : await Subscription.create({
         channel: channelId,
         subscribers: req.user._id
     })
@@ -35,7 +31,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
-    const {channelId} = req.params
+    const { channelId } = req.params
     if (!isValidObjectId(channelId)) {
         throw new apiError(404, "Channel not found while listing the subscribers")
     }
@@ -57,7 +53,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
                         $project: {
                             username: 1,
                             avatar: 1,
-                            fullname:1
+                            fullname: 1
                         }
                     }
                 ]
@@ -72,7 +68,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         }
     ])
 
-    if(!subscribers || subscribers.length === 0) {
+    if (!subscribers || subscribers.length === 0) {
         throw new apiError(404, "Cant find subscribers")
     }
 
@@ -120,7 +116,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         }
     ])
 
-    if(!subscribedChannels || subscribedChannels.length === 0) {
+    if (!subscribedChannels || subscribedChannels.length === 0) {
         throw new apiError(404, "Cant find Channels")
     }
 

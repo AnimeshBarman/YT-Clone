@@ -198,24 +198,26 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
     const videoIndex = playlist.videos.findIndex((video) => video?._id.toString() === videoId)
 
-    if (videoIndex === -1) {
+    if (videoIndex === -1) {//returns false -1
         throw new apiError(404, "video not found")
     }
 
-    const removedVideo = await Playlist.findByIdAndUpdate(videoId,
-        {
-            $pull: {
-                videos: { _id: videoId }
-            }
-        }, { new: true }
-    )
+    try {
+        await Playlist.findByIdAndUpdate(videoId,
+            {
+                $pull: {
+                    videos: { _id: videoId }
+                }
+            }, { new: true }
+        )
 
-    if (!removedVideo) {
+    } catch (error) {
+        console.log("Error while removing video from playlist: ", error);
         throw new apiError(400, "Problem while remove the video from playlist")
     }
 
     return res.status(200).json(
-        new apiResponse(200, removedVideo, "Video removed from playlist")
+        new apiResponse(200, {}, "Video removed from playlist")
     )
     // TODO: remove video from playlist
 
@@ -245,6 +247,11 @@ const updatePlaylist = asyncHandler(async (req, res) => {
 
     if (!isValidObjectId(playlistId)) {
         throw new apiError(400, "invalid playlist id")
+    }
+
+    const playlist = await Playlist.findById(playlistId)
+    if (!playlist) {
+        throw new apiError(404, "Playlist does not exists")
     }
 
     if (!name) {
